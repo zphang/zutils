@@ -1,6 +1,10 @@
 import json
 import os
 
+from typing import Dict, Sequence
+
+from pyutils import chain_idx_get
+
 
 class KEYS:
     META = "###-META-###"
@@ -20,12 +24,12 @@ class DEFAULTS:
     GRANULAR_COMBINE = False
 
 
-def read_json(path):
+def read_json(path: str) -> Dict:
     with open(path, "r") as f:
-        return f.read()
+        return json.loads(f.read())
 
 
-def write_json(data, path):
+def write_json(data: Dict, path: str):
     with open(path, "w") as f:
         f.write(json.dumps(data, indent=2))
 
@@ -35,9 +39,9 @@ def smart_load(path):
     conf = process_includes(conf)
 
 
-def process_env_variables(conf):
+def process_env_variables(conf: Dict) -> Dict:
     do_strict_env = chain_idx_get(
-        dictionary=conf,
+        container=conf,
         key_list=[KEYS.META, KEYS.ENV_STRICT],
         default=DEFAULTS.ENV_STRICT,
     )
@@ -62,7 +66,7 @@ def _recursive_process_env_variables(conf, do_strict_env):
                         conf[k] = DEFAULTS.ENV_DEFAULT
 
 
-def process_includes(conf):
+def process_includes(conf: Dict):
     try:
         include_list = conf[KEYS.META][KEYS.INCLUDE]
     except KeyError:
@@ -75,14 +79,14 @@ def process_includes(conf):
     return combine_conf_list(conf_list)
 
 
-def combine_conf_list(conf_list):
+def combine_conf_list(conf_list: Sequence):
     conf = conf_list[0]
     for next_conf in conf_list[1:]:
         conf = combine_two_dicts(conf, next_conf)
     return conf
 
 
-def combine_two_dicts(conf_a, conf_b):
+def combine_two_dicts(conf_a: Dict, conf_b: Dict) -> Dict:
     conf = conf_a.copy()
     for k, b_elem in conf_b.items():
         if k not in conf_a:
@@ -105,18 +109,4 @@ def combine_two_dicts(conf_a, conf_b):
         else:
             conf[k] = b_elem
     return conf
-
-
-def chain_idx_get(dictionary, key_list, default):
-    try:
-        return chain_idx(dictionary, key_list)
-    except KeyError:
-        return default
-
-
-def chain_idx(dictionary, key_list):
-    curr = dictionary
-    for key in key_list:
-        curr = curr[key]
-    return curr
 
