@@ -19,3 +19,13 @@ def chain_idx(container: Collection, key_list: Sequence) -> Any:
     for key in key_list:
         curr = curr[key]
     return curr
+
+
+def group_by(ls, key_func):
+    result = {}
+    for elem in ls:
+        key = key_func(elem)
+        if key not in result:
+            result[key] = []
+        result[key].append(elem)
+    return result
