@@ -95,7 +95,7 @@ def read_parser(parser, class_with_attributes, skip_non_class_attributes=False):
 @attr.s
 class BaseConfiguration:
     @classmethod
-    def parse_configuration(cls, prog=None, description=None):
+    def run_cli(cls, prog=None, description=None):
         parser = argparse.ArgumentParser(
             prog=prog,
             description=description,
