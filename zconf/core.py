@@ -104,10 +104,12 @@ class BaseConfiguration:
             parser=parser,
             class_with_attributes=cls,
         )
-        return read_parser(
+        result = read_parser(
             parser=parser,
             class_with_attributes=cls,
         )
+        assert isinstance(result, cls)
+        return result
 
     def to_dict(self):
         config_dict = {}
