@@ -1,6 +1,6 @@
 import argparse
 import attr
-import copy
+import copy as copylib
 import inspect
 import json
 import sys
@@ -92,56 +92,73 @@ def read_parser(parser, class_with_attributes, skip_non_class_attributes=False):
         return instance
 
 
-@attr.s
-class BaseConfiguration:
-    @classmethod
-    def run_cli(cls, prog=None, description=None):
-        parser = argparse.ArgumentParser(
-            prog=prog,
-            description=description,
-        )
-        update_parser(
-            parser=parser,
-            class_with_attributes=cls,
-        )
-        result = read_parser(
-            parser=parser,
-            class_with_attributes=cls,
-        )
-        assert isinstance(result, cls)
-        return result
+# === Methods === #
 
-    def to_dict(self):
-        config_dict = {}
-        for attribute in inspect.getfullargspec(self.__class__)[0]:
-            if attribute == "self":
-                continue
-            config_dict[attribute] = getattr(self, attribute)
-        return config_dict
-
-    def to_json(self):
-        serialized_dict = self.to_dict()
-        for key, val in serialized_dict.items():
-            if isinstance(val, pathlib.Path):
-                serialized_dict[key] = str(val)
-        return json.dumps(serialized_dict, indent=2)
-
-    @classmethod
-    def from_json(cls, json_string):
-        return cls(**json.loads(json_string))
-
-    @classmethod
-    def from_json_path(cls, json_path):
-        with open(json_path, "r") as f:
-            return cls.from_json(f.read())
-
-    @classmethod
-    def from_json_arg(cls):
-        assert len(sys.argv) == 2
-        return cls.from_json_path(sys.argv[1])
-
-    def copy(self):
-        return copy.deepcopy(self)
+# == Class Methods
+def run_cli(cls, prog=None, description=None):
+    parser = argparse.ArgumentParser(
+        prog=prog,
+        description=description,
+    )
+    update_parser(
+        parser=parser,
+        class_with_attributes=cls,
+    )
+    result = read_parser(
+        parser=parser,
+        class_with_attributes=cls,
+    )
+    assert isinstance(result, cls)
+    return result
 
 
-zconfig = attr.s
+def from_json(cls, json_string):
+    return cls(**json.loads(json_string))
+
+
+def from_json_path(cls, json_path):
+    with open(json_path, "r") as f:
+        return cls.from_json(f.read())
+
+
+def from_json_arg(cls):
+    assert len(sys.argv) == 2
+    return cls.from_json_path(sys.argv[1])
+
+
+# == Instance Methods
+def to_dict(self):
+    config_dict = {}
+    for attribute in inspect.getfullargspec(self.__class__).kwonlyargs:
+        config_dict[attribute] = getattr(self, attribute)
+    return config_dict
+
+
+def to_json(self):
+    serialized_dict = self.to_dict()
+    for key, val in serialized_dict.items():
+        if isinstance(val, pathlib.Path):
+            serialized_dict[key] = str(val)
+    return json.dumps(serialized_dict, indent=2)
+
+
+def _inst_copy(self):
+    return copylib.deepcopy(self)
+
+
+# === Definition === #
+def run_config(cls):
+    cls = attr.s(cls)
+
+    # Class methods
+    cls.run_cli = classmethod(run_cli)
+    cls.from_json = classmethod(from_json)
+    cls.from_json_path = classmethod(from_json_path)
+    cls.from_json_arg = classmethod(from_json_arg)
+
+    # Instance methods
+    cls.to_dict = to_dict
+    cls.to_json = to_json
+    cls.copy = _inst_copy
+
+    return cls

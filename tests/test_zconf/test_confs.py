@@ -1,12 +1,12 @@
 import pytest
 
-from zconf import zconfig, BaseConfiguration, argparse_attr
+import zconf
 
 
-@zconfig
-class Config(BaseConfiguration):
-    attr1 = argparse_attr(default=None)
-    attr2 = argparse_attr(required=True)
+@zconf.run_config
+class Config:
+    attr1 = zconf.attr(default=None)
+    attr2 = zconf.attr(required=True)
 
 
 def test_args():
@@ -22,3 +22,11 @@ def test_args():
 def test_args_required():
     with pytest.raises(TypeError):
         Config()
+
+
+def test_to_dict():
+    config = Config(attr1=1, attr2=2)
+    conf_dict = config.to_dict()
+    assert len(conf_dict) == 2
+    assert conf_dict["attr1"] == 1
+    assert conf_dict["attr2"] == 2
