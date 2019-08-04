@@ -6,6 +6,9 @@ import json
 import sys
 import pathlib
 
+from pyutils.io import read_json
+from pyutils.datastructures import combine_dicts
+
 
 def _is_true(x):
     return x == "True"
@@ -68,7 +71,7 @@ def update_parser(parser, class_with_attributes):
             )
 
 
-def read_parser(parser, class_with_attributes, skip_non_class_attributes=False, args=None):
+def read_parser(parser, class_with_attributes, skip_non_class_attributes=None, args=None):
     attribute_name_set = {
         attribute.name
         for attribute in class_with_attributes.__attrs_attrs__
@@ -81,7 +84,7 @@ def read_parser(parser, class_with_attributes, skip_non_class_attributes=False, 
         if k in attribute_name_set:
             kwargs[k] = v
         else:
-            if not skip_non_class_attributes:
+            if skip_non_class_attributes is not None and k not in skip_non_class_attributes:
                 raise RuntimeError(f"Unknown attribute {k}")
             leftover_kwargs[k] = v
 
@@ -149,7 +152,7 @@ def _inst_copy(self):
 
 class RunConfig:
     @classmethod
-    def run_cli(cls, data=None, prog=None, description=None):
+    def run_cli(cls, prog=None, description=None):
         parser = argparse.ArgumentParser(
             prog=prog,
             description=description,
@@ -161,6 +164,53 @@ class RunConfig:
         result = read_parser(
             parser=parser,
             class_with_attributes=cls,
+        )
+        assert isinstance(result, cls)
+        return result
+
+    @classmethod
+    def run_cli_json_prepend(cls, prog=None, description=None):
+        # Prototype
+        # Assumptions: no positional?
+        parser = argparse.ArgumentParser(
+            prog=prog,
+            description=description,
+        )
+        parser.add_argument("--ZZsrc", type=str, action='append')
+        parser.add_argument("--ZZoverrides", type=str, nargs="+")
+        pre_args, _ = parser.parse_known_args()
+        cl_args = sys.argv[1:]
+        if pre_args.ZZsrc is not None:
+            imported_dict_ls = [
+                read_json(path)
+                for path in pre_args.ZZsrc
+            ]
+            combined_imported_dict = combine_dicts(imported_dict_ls, strict=True)
+            if pre_args.ZZoverrides is not None:
+                overrides = [f"--{k}" for k in pre_args.ZZoverrides]
+            else:
+                overrides = []
+
+            added_args = []
+            for k, v in combined_imported_dict.items():
+                formatted_k = f"--{k}"
+                if formatted_k in cl_args and formatted_k not in overrides:
+                    raise RuntimeError(f"Attempting to override {formatted_k}")
+                added_args.append(formatted_k)
+                added_args.append(str(v))
+            submitted_args = added_args + cl_args
+        else:
+            assert pre_args.ZZoverrides is None
+            submitted_args = cl_args
+        update_parser(
+            parser=parser,
+            class_with_attributes=cls,
+        )
+        result, _ = read_parser(
+            parser=parser,
+            class_with_attributes=cls,
+            skip_non_class_attributes=["ZZsrc", "ZZoverrides"],
+            args=submitted_args,
         )
         assert isinstance(result, cls)
         return result

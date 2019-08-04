@@ -29,3 +29,14 @@ def group_by(ls, key_func):
             result[key] = []
         result[key].append(elem)
     return result
+
+
+def combine_dicts(dict_ls, strict=True, dict_class=dict):
+    new_dict = dict_class()
+    for i, dictionary in enumerate(dict_ls):
+        for k, v in dictionary.items():
+            if strict:
+                if k in new_dict:
+                    raise RuntimeError(f"repeated key {k} seen in dict {i}")
+            new_dict[k] = v
+    return new_dict
