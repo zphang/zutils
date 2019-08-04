@@ -68,7 +68,7 @@ def update_parser(parser, class_with_attributes):
             )
 
 
-def read_parser(parser, class_with_attributes, skip_non_class_attributes=False):
+def read_parser(parser, class_with_attributes, skip_non_class_attributes=False, args=None):
     attribute_name_set = {
         attribute.name
         for attribute in class_with_attributes.__attrs_attrs__
@@ -77,7 +77,7 @@ def read_parser(parser, class_with_attributes, skip_non_class_attributes=False):
     kwargs = dict()
     leftover_kwargs = dict()
 
-    for k, v in vars(parser.parse_args()).items():
+    for k, v in vars(parser.parse_args(args)).items():
         if k in attribute_name_set:
             kwargs[k] = v
         else:
@@ -95,7 +95,7 @@ def read_parser(parser, class_with_attributes, skip_non_class_attributes=False):
 # === Methods === #
 
 # == Class Methods
-def run_cli(cls, prog=None, description=None):
+def run_cli(cls, args=None, prog=None, description=None):
     parser = argparse.ArgumentParser(
         prog=prog,
         description=description,
@@ -107,6 +107,7 @@ def run_cli(cls, prog=None, description=None):
     result = read_parser(
         parser=parser,
         class_with_attributes=cls,
+        args=args,
     )
     assert isinstance(result, cls)
     return result
@@ -146,19 +147,75 @@ def _inst_copy(self):
     return copylib.deepcopy(self)
 
 
+class RunConfig:
+    @classmethod
+    def run_cli(cls, data=None, prog=None, description=None):
+        parser = argparse.ArgumentParser(
+            prog=prog,
+            description=description,
+        )
+        update_parser(
+            parser=parser,
+            class_with_attributes=cls,
+        )
+        result = read_parser(
+            parser=parser,
+            class_with_attributes=cls,
+        )
+        assert isinstance(result, cls)
+        return result
+
+    @classmethod
+    def from_json(cls, json_string):
+        return cls(**json.loads(json_string))
+
+    @classmethod
+    def from_json_path(cls, json_path):
+        with open(json_path, "r") as f:
+            return cls.from_json(f.read())
+
+    @classmethod
+    def from_json_arg(cls):
+        assert len(sys.argv) == 2
+        return cls.from_json_path(sys.argv[1])
+
+    def to_dict(self):
+        config_dict = {}
+        for attribute in inspect.getfullargspec(self.__class__).kwonlyargs:
+            config_dict[attribute] = getattr(self, attribute)
+        return config_dict
+
+    def to_json(self):
+        serialized_dict = self.to_dict()
+        for key, val in serialized_dict.items():
+            if isinstance(val, pathlib.Path):
+                serialized_dict[key] = str(val)
+        return json.dumps(serialized_dict, indent=2)
+
+    def copy(self):
+        return copylib.deepcopy(self)
+
+    def _post_init(self):
+        pass
+
+    def __attrs_post_init__(self):
+        self._post_init()
+
+
 # === Definition === #
 def run_config(cls):
     cls = attr.s(cls)
 
-    # Class methods
-    cls.run_cli = classmethod(run_cli)
-    cls.from_json = classmethod(from_json)
-    cls.from_json_path = classmethod(from_json_path)
-    cls.from_json_arg = classmethod(from_json_arg)
+    if not isinstance(cls, RunConfig):
+        # Class methods
+        cls.run_cli = classmethod(run_cli)
+        cls.from_json = classmethod(from_json)
+        cls.from_json_path = classmethod(from_json_path)
+        cls.from_json_arg = classmethod(from_json_arg)
 
-    # Instance methods
-    cls.to_dict = to_dict
-    cls.to_json = to_json
-    cls.copy = _inst_copy
+        # Instance methods
+        cls.to_dict = to_dict
+        cls.to_json = to_json
+        cls.copy = _inst_copy
 
     return cls

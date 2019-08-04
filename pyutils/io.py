@@ -17,3 +17,25 @@ def read_json(path):
 
 def write_json(data, path):
     return write_file(json.dumps(data, indent=2), path)
+
+
+def read_jsonl(path):
+    # Manually open because .splitlines is different from iterating over lines
+    ls = []
+    with open(path, "r") as f:
+        for line in f:
+            ls.append(json.loads(line))
+    return ls
+
+
+def write_jsonl(data, path):
+    lines = [
+        json.dumps(elem).replace("\n", "")
+        for elem in data
+    ]
+    write_file("\n".join(lines), path)
+
+
+def read_file_lines(path, mode="r", encoding="utf-8", **kwargs):
+    with open(path, mode=mode, encoding=encoding, **kwargs) as f:
+        return f.readlines()
