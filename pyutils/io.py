@@ -1,3 +1,5 @@
+import os
+import glob
 import json
 
 
@@ -29,8 +31,9 @@ def read_jsonl(path):
 
 
 def write_jsonl(data, path):
+    assert isinstance(data, list)
     lines = [
-        json.dumps(elem).replace("\n", "")
+        to_jsonl(elem)
         for elem in data
     ]
     write_file("\n".join(lines), path)
@@ -39,3 +42,16 @@ def write_jsonl(data, path):
 def read_file_lines(path, mode="r", encoding="utf-8", **kwargs):
     with open(path, mode=mode, encoding=encoding, **kwargs) as f:
         return f.readlines()
+
+
+def to_jsonl(data):
+    return json.dumps(data).replace("\n", "")
+
+
+def create_containing_folder(path):
+    fol_path = os.path.split(path)[0]
+    os.makedirs(fol_path, exist_ok=True)
+
+
+def sorted_glob(pathname, *, recursive=False):
+    return sorted(glob.glob(pathname, recursive=recursive))
