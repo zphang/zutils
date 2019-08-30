@@ -11,3 +11,18 @@ def indexer(key):
     def f(obj):
         return obj[key]
     return f
+
+
+def identity(*args):
+    if len(args) > 1:
+        return args
+    else:
+        return args[0]
+
+
+def always_false(*args, **kwargs):
+    return False
+
+
+def always_true(*args, **kwargs):
+    return True

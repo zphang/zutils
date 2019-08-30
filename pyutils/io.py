@@ -39,9 +39,13 @@ def write_jsonl(data, path):
     write_file("\n".join(lines), path)
 
 
-def read_file_lines(path, mode="r", encoding="utf-8", **kwargs):
+def read_file_lines(path, mode="r", encoding="utf-8", strip_lines=False, **kwargs):
     with open(path, mode=mode, encoding=encoding, **kwargs) as f:
-        return f.readlines()
+        lines = f.readlines()
+    if strip_lines:
+        return [line.strip() for line in strip_lines]
+    else:
+        return lines
 
 
 def to_jsonl(data):

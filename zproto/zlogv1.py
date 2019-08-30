@@ -1,6 +1,6 @@
-import json
 import os
 import time
+import torch  # just for pickling
 
 from contextlib import contextmanager
 
@@ -15,6 +15,9 @@ class BaseZLogger:
     def write_entry(self, key, entry):
         raise NotImplementedError()
 
+    def write_obj(self, key, obj, entry):
+        raise NotImplementedError()
+
     def flush(self):
         raise NotImplementedError()
 
@@ -26,7 +29,6 @@ class ZLogger(BaseZLogger):
 
         self.write_mode = "w" if overwrite else "a"
         os.makedirs(fol_path)
-
         self.handles = {}
 
     @contextmanager
@@ -45,6 +47,24 @@ class ZLogger(BaseZLogger):
         entry["TIMESTAMP"] = time.time()
         self._write_entry_to_file(key=key, entry=entry)
 
+    def write_obj(self, key, obj, entry):
+        assert "DATA" not in entry
+        if isinstance(entry, dict):
+            entry = entry.copy()
+        else:
+            entry = {"data": entry}
+        time_stamp = time.time()
+        entry["DATA"] = self._save_obj(key, time_stamp, obj)
+        entry["TIMESTAMP"] = time_stamp
+        self._write_entry_to_file(key=key, entry=entry)
+
+    def _save_obj(self, key, time_stamp, obj):
+        cache_path = self.get_cache_path(key)
+        os.makedirs(cache_path, exist_ok=True)
+        save_path = os.path.join(cache_path, str(time_stamp))
+        torch.save(obj, save_path)
+        return save_path
+
     def check_handle_open(self, key):
         if key in self.handles:
             return
@@ -54,6 +74,9 @@ class ZLogger(BaseZLogger):
 
     def get_path(self, key):
         return os.path.join(self.fol_path, key + ".zlog")
+
+    def get_cache_path(self, key):
+        return os.path.join(self.fol_path, key + "___CACHE")
 
     def flush(self, key=None):
         if key is None:
@@ -77,6 +100,9 @@ class VoidZLogger(BaseZLogger):
     def write_entry(self, key, entry):
         pass
 
+    def write_obj(self, key, obj, entry):
+        pass
+
     def flush(self):
         pass
 
@@ -88,11 +114,15 @@ class PrintZLogger(BaseZLogger):
     def write_entry(self, key, entry):
         print(f"{key}: {entry}")
 
+    def write_obj(self, key, obj, entry):
+        print(f"{key}: {obj}")
+
     def flush(self):
         pass
 
 
 VOID_LOGGER = VoidZLogger()
+PRINT_LOGGER = PrintZLogger()
 
 
 def load_log(fol_path):

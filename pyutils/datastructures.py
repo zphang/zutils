@@ -40,3 +40,10 @@ def combine_dicts(dict_ls, strict=True, dict_class=dict):
                     raise RuntimeError(f"repeated key {k} seen in dict {i}")
             new_dict[k] = v
     return new_dict
+
+
+def sort_dict(d):
+    return {
+        k: d[k]
+        for k in sorted(list(d.keys()))
+    }
