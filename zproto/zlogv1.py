@@ -93,7 +93,7 @@ class ZLogger(BaseZLogger):
         self.handles[key].write(io.to_jsonl(entry) + "\n")
 
 
-class VoidZLogger(BaseZLogger):
+class _VoidZLogger(BaseZLogger):
     def log_context(self):
         yield
 
@@ -107,7 +107,7 @@ class VoidZLogger(BaseZLogger):
         pass
 
 
-class PrintZLogger(BaseZLogger):
+class _PrintZLogger(BaseZLogger):
     def log_context(self):
         yield
 
@@ -121,8 +121,44 @@ class PrintZLogger(BaseZLogger):
         pass
 
 
-VOID_LOGGER = VoidZLogger()
-PRINT_LOGGER = PrintZLogger()
+class InMemoryZLogger(BaseZLogger):
+    def __init__(self):
+        self.entries = {}
+        self.data = {}
+
+    def log_context(self):
+        yield
+
+    def write_entry(self, key, entry):
+        if isinstance(entry, dict):
+            entry = entry.copy()
+        else:
+            entry = {"data": entry}
+        entry["TIMESTAMP"] = time.time()
+        self._write_entry(key=key, entry=entry)
+
+    def write_obj(self, key, obj, entry):
+        assert "DATA" not in entry
+        if isinstance(entry, dict):
+            entry = entry.copy()
+        else:
+            entry = {"data": entry}
+        time_stamp = time.time()
+        entry["DATA"] = obj
+        entry["TIMESTAMP"] = time_stamp
+        self._write_entry(key=key, entry=entry)
+
+    def _write_entry(self, key, entry):
+        if key not in self.entries:
+            self.entries[key] = []
+        self.entries[key].append(entry)
+
+    def flush(self):
+        pass
+
+
+VOID_LOGGER = _VoidZLogger()
+PRINT_LOGGER = _PrintZLogger()
 
 
 def load_log(fol_path):
