@@ -169,7 +169,7 @@ class RunConfig:
         return result
 
     @classmethod
-    def run_cli_json_prepend(cls, prog=None, description=None):
+    def run_cli_json_prepend(cls, cl_args=None, prog=None, description=None):
         # Prototype
         # Assumptions: no positional?
         parser = argparse.ArgumentParser(
@@ -178,8 +178,9 @@ class RunConfig:
         )
         parser.add_argument("--ZZsrc", type=str, action='append')
         parser.add_argument("--ZZoverrides", type=str, nargs="+")
-        pre_args, _ = parser.parse_known_args()
-        cl_args = sys.argv[1:]
+        pre_args, _ = parser.parse_known_args(cl_args)
+        if cl_args is None:
+            cl_args = sys.argv[1:]
         if pre_args.ZZsrc is not None:
             imported_dict_ls = [
                 read_json(path)

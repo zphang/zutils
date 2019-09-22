@@ -39,13 +39,15 @@ class ZLogger(BaseZLogger):
             for f in self.handles.values():
                 f.close()
 
-    def write_entry(self, key, entry):
+    def write_entry(self, key, entry, do_print=False):
         if isinstance(entry, dict):
             entry = entry.copy()
         else:
             entry = {"data": entry}
         entry["TIMESTAMP"] = time.time()
         self._write_entry_to_file(key=key, entry=entry)
+        if do_print:
+            print(entry)
 
     def write_obj(self, key, obj, entry):
         assert "DATA" not in entry
