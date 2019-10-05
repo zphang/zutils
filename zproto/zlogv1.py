@@ -1,6 +1,7 @@
 import os
 import time
 import torch  # just for pickling
+import traceback
 
 from contextlib import contextmanager
 
@@ -23,8 +24,9 @@ class BaseZLogger:
 
 
 class ZLogger(BaseZLogger):
-    def __init__(self, fol_path, overwrite=False):
+    def __init__(self, fol_path, log_errors=True, overwrite=False):
         self.fol_path = fol_path
+        self.log_errors = log_errors
         self.overwrite = overwrite
 
         self.write_mode = "w" if overwrite else "a"
@@ -35,6 +37,10 @@ class ZLogger(BaseZLogger):
     def log_context(self):
         try:
             yield self
+        except Exception:
+            if self.log_errors:
+                self.write_entry("errors", traceback.format_exc())
+            raise
         finally:
             for f in self.handles.values():
                 f.close()

@@ -16,7 +16,7 @@ def _is_true(x):
 
 def argparse_attr(default=attr.NOTHING, validator=None,
                   repr=True, cmp=True, hash=True, init=True,
-                  convert=None, opt_string=None,
+                  converter=None, opt_string=None,
                   **argparse_kwargs):
     if opt_string is None:
         opt_string_ls = []
@@ -39,7 +39,7 @@ def argparse_attr(default=attr.NOTHING, validator=None,
         cmp=cmp,
         hash=hash,
         init=init,
-        convert=convert,
+        converter=converter,
         metadata={
             "opt_string_ls": opt_string_ls,
             "argparse_kwargs": argparse_kwargs,
