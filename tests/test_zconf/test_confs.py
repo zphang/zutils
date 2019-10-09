@@ -4,7 +4,7 @@ import zconf
 
 
 @zconf.run_config
-class Config:
+class Config(zconf.RunConfig):
     attr1 = zconf.attr(default=None)
     attr2 = zconf.attr(required=True)
 
@@ -22,6 +22,11 @@ def test_args():
 def test_args_required():
     with pytest.raises(TypeError):
         Config()
+
+
+def test_args_required_command_line():
+    with pytest.raises(SystemExit):
+        Config.run_cli_json_prepend(cl_args=[])
 
 
 def test_to_dict():

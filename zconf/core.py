@@ -169,6 +169,13 @@ class RunConfig:
         return result
 
     @classmethod
+    def get_attr_dict(cls):
+        return {
+            attr.name: attr
+            for attr in cls.__attrs_attrs__
+        }
+
+    @classmethod
     def run_cli_json_prepend(cls, cl_args=None, prog=None, description=None):
         # Prototype
         # Assumptions: no positional?
@@ -182,23 +189,37 @@ class RunConfig:
         if cl_args is None:
             cl_args = sys.argv[1:]
         if pre_args.ZZsrc is not None:
+            # Import configs from ZZsrc JSONs
             imported_dict_ls = [
                 read_json(path)
                 for path in pre_args.ZZsrc
             ]
             combined_imported_dict = combine_dicts(imported_dict_ls, strict=True)
-            if pre_args.ZZoverrides is not None:
-                overrides = [f"--{k}" for k in pre_args.ZZoverrides]
-            else:
-                overrides = []
 
+            # Record which args are going to be overridden
+
+            if pre_args.ZZoverrides is not None:
+                raw_overrides = pre_args.ZZoverrides
+                overrides = [f"--{k}" for k in raw_overrides]
+            else:
+                raw_overrides = overrides = []
+
+            attr_dict = cls.get_attr_dict()
             added_args = []
             for k, v in combined_imported_dict.items():
                 formatted_k = f"--{k}"
+                # Ensure that args from imported, which are not specified to be overridden,
+                #   aren't explicitly specified
                 if formatted_k in cl_args and formatted_k not in overrides:
                     raise RuntimeError(f"Attempting to override {formatted_k}")
-                added_args.append(formatted_k)
-                added_args.append(str(v))
+
+                # Special handling for store_true args
+                if cls._is_store_true_arg(attr_dict[k]):
+                    if v and k not in raw_overrides:
+                        added_args.append(formatted_k)
+                else:
+                    added_args.append(formatted_k)
+                    added_args.append(str(v))
             submitted_args = added_args + cl_args
         else:
             assert pre_args.ZZoverrides is None
@@ -215,6 +236,14 @@ class RunConfig:
         )
         assert isinstance(result, cls)
         return result
+
+    @classmethod
+    def _is_store_true_arg(cls, attr):
+        if "argparse_kwargs" not in attr.metadata:
+            return False
+        if "action" not in attr.metadata["argparse_kwargs"]:
+            return False
+        return attr.metadata["argparse_kwargs"]["action"] == "store_true"
 
     @classmethod
     def from_json(cls, json_string):
