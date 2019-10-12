@@ -1,5 +1,5 @@
 {
-  "prince": {
+  "princeXX": {
     "ssh_key_path": "/Users/zhansheng/keypairs/nyu_rsa_nopass",
     "local_path": "/Users/zhansheng/nyu/code/zutils",
     "remote_user": "zp489",
@@ -14,7 +14,7 @@
     ],
     "delete": true
   },
-  "geras": {
+  "gerasXX": {
     "ssh_key_path": "/Users/zhansheng/keypairs/nyu_rsa_nopass",
     "local_path": "/Users/zhansheng/nyu/code/zutils",
     "remote_user": "zp489",

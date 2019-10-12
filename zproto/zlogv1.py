@@ -101,6 +101,52 @@ class ZLogger(BaseZLogger):
         self.handles[key].write(io.to_jsonl(entry) + "\n")
 
 
+class ZBufferedLogger(ZLogger):
+    def __init__(self, fol_path,
+                 default_buffer_size=1,
+                 buffer_size_dict=None,
+                 log_errors=True, overwrite=False):
+        super().__init__(fol_path=fol_path, log_errors=log_errors, overwrite=overwrite)
+        self.default_buffer_size = default_buffer_size
+        self.buffer_size_dict = buffer_size_dict.copy() if buffer_size_dict else {}
+        self.buffer_dict = {}
+
+    def check_handle_open(self, key):
+        super().check_handle_open(key=key)
+        if key not in self.buffer_dict:
+            self.buffer_dict[key] = []
+            if key not in self.buffer_size_dict:
+                self.buffer_size_dict[key] = self.default_buffer_size
+
+    def _write_entry_to_file(self, key, entry):
+        self.check_handle_open(key)
+        self.buffer_dict[key].append(entry)
+        if len(self.buffer_dict[key]) >= self.buffer_size_dict[key]:
+            self._write_buffer(key)
+
+    def _write_buffer(self, key):
+        if not self.buffer_dict[key]:
+            return
+        self.handles[key].write("".join(
+            io.to_jsonl(entry) + "\n"
+            for entry in self.buffer_dict[key]
+        ))
+        self.buffer_dict[key] = []
+
+    def flush(self, key=None):
+        if key is None:
+            for k, f in self.handles.items():
+                self._write_buffer(k)
+                f.flush()
+        elif isinstance(key, list):
+            for k in key:
+                self._write_buffer(k)
+                self.handles[k].flush()
+        else:
+            self._write_buffer(key)
+            self.handles[key].flush()
+
+
 class _VoidZLogger(BaseZLogger):
     def log_context(self):
         yield

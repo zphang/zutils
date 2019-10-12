@@ -1,6 +1,5 @@
 import os
 import shlex
-import sys
 import pytest
 
 import zconf

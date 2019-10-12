@@ -4,18 +4,59 @@ import subprocess
 
 from pyutils.io import read_json
 
-ZSYNC_CONF_NAME = ".zsync.json"
+ZSYNC_CONF_FILE_NAME = ".zsync.json"
+ZSYNC_BASE_PATH_ENV_NAME = "ZSYNC_BASE_PATH"
 
 
-def load_config(location):
-    if not os.path.exists(ZSYNC_CONF_NAME):
-        raise FileNotFoundError(ZSYNC_CONF_NAME)
-    all_config = read_json(ZSYNC_CONF_NAME)
-    if not all_config:
-        raise RuntimeError("Config file is empty: {}".format(os.path.abspath(ZSYNC_CONF_NAME)))
-    if location not in all_config:
-        raise KeyError("'{}' config not found".format(location))
-    return all_config[location]
+def get_global_base_path():
+    if ZSYNC_BASE_PATH_ENV_NAME in os.environ:
+        return os.environ[ZSYNC_BASE_PATH_ENV_NAME]
+    else:
+        return os.path.join(os.path.expanduser("~"), ".zsync")
+
+
+def get_global_config():
+    global_config_path = os.path.join(get_global_base_path(), "global.json")
+    if os.path.exists(global_config_path):
+        return read_json(global_config_path)
+    else:
+        return {}
+
+
+def get_local_config(cwd):
+    local_path = os.path.join(cwd, ZSYNC_CONF_FILE_NAME)
+    if os.path.exists(local_path):
+        return read_json(local_path)
+    else:
+        return {}
+
+
+def load_config(location, verbose=True):
+    cwd = os.getcwd()
+
+    # 1. Local
+    local_config = get_local_config(cwd)
+    if location in local_config:
+        if verbose:
+            print("Loading from local")
+        return local_config[location]
+
+    # 2. Global
+    global_config = get_global_config()
+    if "paths" in global_config and cwd in global_config["paths"]:
+        if verbose:
+            print("Loading from global-paths")
+        specific_config = read_json(os.path.join(get_global_base_path(), global_config["paths"][cwd]))
+        return specific_config[location]
+
+    if "configs" in global_config \
+            and cwd in global_config["configs"]\
+            and location in global_config["configs"][location]:
+        if verbose:
+            print("Loading from global-configs")
+        return global_config["configs"][cwd][location]
+
+    raise KeyError("'{}' config not found".format(location))
 
 
 def construct_rsync_tokens(ssh_key_path, exclude_list, delete, src, dst):
@@ -91,7 +132,7 @@ def zsync_from(location, show):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
+    parser = argparse.ArgumentParser(description='')
     parser.add_argument('mode', help='to, from')
     parser.add_argument('location')
     parser.add_argument('--show', action="store_true")
@@ -106,6 +147,8 @@ def main():
             location=args.location,
             show=args.show,
         )
+    else:
+        raise KeyError(args.mode)
 
 
 if __name__ == "__main__":
