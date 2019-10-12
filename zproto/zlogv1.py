@@ -122,7 +122,7 @@ class ZBufferedLogger(ZLogger):
         self.check_handle_open(key)
         self.buffer_dict[key].append(entry)
         if len(self.buffer_dict[key]) >= self.buffer_size_dict[key]:
-            self._write_buffer(key)
+            self.flush(key)
 
     def _write_buffer(self, key):
         if not self.buffer_dict[key]:
