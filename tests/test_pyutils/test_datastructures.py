@@ -52,3 +52,14 @@ def test_chain_idx_get():
     assert pyutils.chain_idx_get(ls, [0], default=1234) == 1
     assert pyutils.chain_idx_get(ls, [0, 0], default=1234) == 1234
     assert pyutils.chain_idx_get(ls, [1, 1], default=1234) == 1234
+
+
+def test_partition_list():
+    assert pyutils.list_equal(
+        pyutils.partition_list(list(range(10)), 5),
+        [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]],
+    )
+    assert pyutils.list_equal(
+        pyutils.partition_list(list(range(10)), 3),
+        [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9]],
+    )

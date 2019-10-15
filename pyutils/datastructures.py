@@ -1,3 +1,4 @@
+import math
 from typing import Collection, Any, Sequence
 
 
@@ -47,3 +48,15 @@ def sort_dict(d):
         k: d[k]
         for k in sorted(list(d.keys()))
     }
+
+
+def partition_list(ls, n, strict=False):
+    length = len(ls)
+    if strict:
+        assert length % n == 0
+    parts_per = math.ceil(length / n)
+    print(parts_per)
+    result = []
+    for i in range(n):
+        result.append(ls[i*parts_per: (i+1) * parts_per])
+    return result
