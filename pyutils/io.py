@@ -59,3 +59,12 @@ def create_containing_folder(path):
 
 def sorted_glob(pathname, *, recursive=False):
     return sorted(glob.glob(pathname, recursive=recursive))
+
+
+def read_last_line(fname):
+    # Hacky
+    with open(fname, 'rb') as fh:
+        first = next(fh).decode()
+        fh.seek(-1024, 2)
+        last = fh.readlines()[-1].decode()
+        return last
