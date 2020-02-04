@@ -19,9 +19,9 @@ def tags_to_regex(tag_pattern, format_dict=None, default_format="\\w+"):
     return new_pattern
 
 
-def match_paths(path_pattern):
+def match_paths(path_pattern, default_format="\\w+"):
     path_ls = sorted(glob.glob(re.sub(r"{(\w+)}", "*", path_pattern)))
-    regex = re.compile(tags_to_regex(path_pattern))
+    regex = re.compile(tags_to_regex(path_pattern, default_format=default_format))
     result_ls = []
     for path in path_ls:
         result = next(regex.finditer(path)).groupdict()
