@@ -1,5 +1,5 @@
 import math
-from typing import Collection, Any, Sequence
+from typing import Collection, Any, Sequence, Iterable
 
 
 def take_one(ls: Collection) -> Any:
@@ -60,3 +60,14 @@ def partition_list(ls, n, strict=False):
     for i in range(n):
         result.append(ls[i*parts_per: (i+1) * parts_per])
     return result
+
+
+class ReusableGenerator(Iterable):
+
+    def __init__(self, generator_function, *args, **kwargs):
+        self.generator_function = generator_function
+        self.args = args
+        self.kwargs = kwargs
+
+    def __iter__(self):
+        return self.generator_function(*self.args, **self.kwargs)
