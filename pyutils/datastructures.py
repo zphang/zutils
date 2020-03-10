@@ -1,5 +1,6 @@
 import math
-from typing import Collection, Any, Sequence, Iterable
+import itertools
+from typing import Collection, Any, Sequence, Iterable, Iterator
 
 
 def take_one(ls: Collection) -> Any:
@@ -71,3 +72,19 @@ class ReusableGenerator(Iterable):
 
     def __iter__(self):
         return self.generator_function(*self.args, **self.kwargs)
+
+
+class InfiniteYield(Iterator):
+    def __init__(self, iterable: Iterable):
+        self.iterable = iterable
+        self.iterator = iter(itertools.cycle(self.iterable))
+
+    def __next__(self):
+        return next(self.iterator)
+
+    def pop(self):
+        return next(self.iterator)
+
+
+def has_same_keys(dict1: dict, dict2: dict) -> bool:
+    return dict1.keys() == dict2.keys()
