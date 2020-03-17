@@ -64,7 +64,16 @@ def partition_list(ls, n, strict=False):
 
 
 class ReusableGenerator(Iterable):
+    """
+    Makes a generator reusable e.g.
 
+    ```
+    for x in gen:
+        pass
+    for x in gen:
+        pass
+    ```
+    """
     def __init__(self, generator_function, *args, **kwargs):
         self.generator_function = generator_function
         self.args = args
@@ -75,6 +84,7 @@ class ReusableGenerator(Iterable):
 
 
 class InfiniteYield(Iterator):
+
     def __init__(self, iterable: Iterable):
         self.iterable = iterable
         self.iterator = iter(itertools.cycle(self.iterable))
