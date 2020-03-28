@@ -30,6 +30,10 @@ def read_jsonl(path):
     return ls
 
 
+def display_json(data):
+    print(json.dumps(data, indent=2))
+
+
 def write_jsonl(data, path):
     assert isinstance(data, list)
     lines = [
@@ -61,6 +65,16 @@ def sorted_glob(pathname, *, recursive=False):
     return sorted(glob.glob(pathname, recursive=recursive))
 
 
+def assert_exists(path):
+    if not os.path.exists(path):
+        raise FileNotFoundError(path)
+
+
+def assert_not_exists(path):
+    if os.path.exists(path):
+        raise FileExistsError(path)
+
+
 def read_last_line(fname):
     # Hacky
     with open(fname, 'rb') as fh:
@@ -68,3 +82,10 @@ def read_last_line(fname):
         fh.seek(-1024, 2)
         last = fh.readlines()[-1].decode()
         return last
+
+
+def get_num_lines(path):
+    with open(path, "r") as f:
+        for i, l in enumerate(f):
+            pass
+    return i + 1

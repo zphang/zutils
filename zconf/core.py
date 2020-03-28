@@ -1,10 +1,14 @@
 import argparse
 import attr
 import copy as copylib
+import contextlib
 import inspect
 import json
+import shlex
 import sys
 import pathlib
+
+from typing import Any, Tuple
 
 from pyutils.io import read_json
 from pyutils.datastructures import combine_dicts
@@ -48,7 +52,7 @@ def argparse_attr(default=attr.NOTHING, validator=None,
     )
 
 
-def update_parser(parser, class_with_attributes):
+def update_parser(parser, class_with_attributes: Any):
     for attribute in class_with_attributes.__attrs_attrs__:
         if "argparse_kwargs" in attribute.metadata:
             argparse_kwargs = attribute.metadata["argparse_kwargs"]
@@ -71,7 +75,8 @@ def update_parser(parser, class_with_attributes):
             )
 
 
-def read_parser(parser, class_with_attributes, skip_non_class_attributes=None, args=None):
+def read_parser(parser, class_with_attributes: Any,
+                skip_non_class_attributes=None, args=None):
     attribute_name_set = {
         attribute.name
         for attribute in class_with_attributes.__attrs_attrs__
@@ -157,6 +162,10 @@ class RunConfig:
             prog=prog,
             description=description,
         )
+        return cls.run_from_parser(parser=parser)
+
+    @classmethod
+    def run_from_parser(cls, parser):
         update_parser(
             parser=parser,
             class_with_attributes=cls,
@@ -183,6 +192,14 @@ class RunConfig:
             prog=prog,
             description=description,
         )
+        result = cls.run_from_parser_json_prepend(
+            parser=parser,
+            cl_args=cl_args,
+        )
+        return result
+
+    @classmethod
+    def run_from_parser_json_prepend(cls, parser, cl_args):
         parser.add_argument("--ZZsrc", type=str, action='append')
         parser.add_argument("--ZZoverrides", type=str, nargs="+")
         pre_args, _ = parser.parse_known_args(cl_args)
@@ -238,6 +255,18 @@ class RunConfig:
         return result
 
     @classmethod
+    def run_shlex_json_prepend(cls, string: str):
+        return cls.run_cli_json_prepend(cl_args=shlex.split(string.strip()))
+
+    @classmethod
+    def default_run_cli(cls, cl_args=None, prog=None, description=None):
+        return cls.run_cli_json_prepend(
+            cl_args=cl_args,
+            prog=prog,
+            description=description,
+        )
+
+    @classmethod
     def _is_store_true_arg(cls, attr):
         if "argparse_kwargs" not in attr.metadata:
             return False
@@ -246,8 +275,12 @@ class RunConfig:
         return attr.metadata["argparse_kwargs"]["action"] == "store_true"
 
     @classmethod
+    def from_dict(cls, dictionary):
+        return cls(**dictionary)
+
+    @classmethod
     def from_json(cls, json_string):
-        return cls(**json.loads(json_string))
+        return cls.from_dict(json.loads(json_string))
 
     @classmethod
     def from_json_path(cls, json_path):
@@ -299,3 +332,18 @@ def run_config(cls):
         cls.copy = _inst_copy
 
     return cls
+
+
+def get_sys_args():
+    return sys.argv[1:]
+
+
+def get_mode_and_cl_args(cl_args=None) -> Tuple[str, list]:
+    if cl_args is None:
+        cl_args = get_sys_args()
+    assert len(cl_args) >= 1, "First argument is the mode"
+    return cl_args[0], cl_args[1:]
+
+
+class ModeLookupError(KeyError):
+    pass
