@@ -98,3 +98,38 @@ class InfiniteYield(Iterator):
 
 def has_same_keys(dict1: dict, dict2: dict) -> bool:
     return dict1.keys() == dict2.keys()
+
+
+def get_all_same(ls):
+    assert len(set(ls)) == 1
+    return ls[0]
+
+
+def strict_zip(iterator_list):
+    if not iterator_list:
+        # running zip() is surprisingly valid
+        return
+    iterable_list = [iter(x) for x in iterator_list]
+    while True:
+        curr_result_ls = []
+        try:
+            curr_result_ls.append(next(iterable_list[0]))
+        except StopIteration:
+            # Ran out of items on first, so the rest must also raise StopIteration
+            for i, iterable in enumerate(iterable_list[1:], start=1):
+                try:
+                    next(iterable)
+                except StopIteration:
+                    pass
+                else:
+                    # If calling next(iterable) doesn't throw, that means it still has more items
+                    raise StopIteration(f"iterator {i} has at least one more item than the first")
+            # Safely return if all the next(iterable)s raised StopIteration
+            return
+
+        for i, iterable in enumerate(iterable_list[1:], start=1):
+            try:
+                curr_result_ls.append(next(iterable))
+            except StopIteration:
+                raise StopIteration(f"iterator {i} has at least one fewer item than the first")
+        yield tuple(curr_result_ls)
