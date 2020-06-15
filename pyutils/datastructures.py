@@ -105,31 +105,9 @@ def get_all_same(ls):
     return ls[0]
 
 
-def strict_zip(iterator_list):
-    if not iterator_list:
-        # running zip() is surprisingly valid
-        return
-    iterable_list = [iter(x) for x in iterator_list]
-    while True:
-        curr_result_ls = []
-        try:
-            curr_result_ls.append(next(iterable_list[0]))
-        except StopIteration:
-            # Ran out of items on first, so the rest must also raise StopIteration
-            for i, iterable in enumerate(iterable_list[1:], start=1):
-                try:
-                    next(iterable)
-                except StopIteration:
-                    pass
-                else:
-                    # If calling next(iterable) doesn't throw, that means it still has more items
-                    raise StopIteration(f"iterator {i} has at least one more item than the first")
-            # Safely return if all the next(iterable)s raised StopIteration
-            return
-
-        for i, iterable in enumerate(iterable_list[1:], start=1):
-            try:
-                curr_result_ls.append(next(iterable))
-            except StopIteration:
-                raise StopIteration(f"iterator {i} has at least one fewer item than the first")
-        yield tuple(curr_result_ls)
+def zip_equal(*iterables):
+    sentinel = object()
+    for combo in itertools.zip_longest(*iterables, fillvalue=sentinel):
+        if sentinel in combo:
+            raise ValueError('Iterables have different lengths')
+        yield combo
