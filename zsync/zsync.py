@@ -59,7 +59,7 @@ def load_config(location, verbose=True):
     raise KeyError("'{}' config not found".format(location))
 
 
-def construct_rsync_tokens(ssh_key_path, exclude_list, delete, src, dst, port=None):
+def construct_rsync_tokens(ssh_key_path, exclude_list, delete, src, dst, port=None, ssh_options=""):
     """
     s = "rsync \\\n"
     s += "    -avz -e 'ssh -i {}' \\\n".format(ssh_key_path)
@@ -71,7 +71,7 @@ def construct_rsync_tokens(ssh_key_path, exclude_list, delete, src, dst, port=No
     return s
     """
     # ssh_command = "ssh -i {}".format(ssh_key_path),
-    ssh_command = "ssh -o IdentitiesOnly=yes -i {}".format(ssh_key_path)
+    ssh_command = "ssh -o IdentitiesOnly=yes {} -i {}".format(ssh_options, ssh_key_path)
     if port is not None:
         ssh_command += " -p {}".format(port)
     tokens = [
@@ -115,6 +115,7 @@ def zsync_to(location, show):
         src=src,
         dst=dst,
         port=location_config.get("ssh_port"),
+        ssh_options=location_config.get("ssh_options"),
     )
     perform_command(tokens, show)
 
@@ -134,6 +135,7 @@ def zsync_from(location, show):
         src=src,
         dst=dst,
         port=location_config.get("ssh_port"),
+        ssh_options=location_config.get("ssh_options"),
     )
     perform_command(tokens, show)
 
