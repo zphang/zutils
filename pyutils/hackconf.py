@@ -1,6 +1,7 @@
 import os
 
 import pyutils.io as io
+import pyutils.datastructures as datastructures
 
 
 class _DummyDefault:
@@ -45,7 +46,7 @@ class Registry:
         return cls(data=data, verbose=verbose)
 
     def to_dict(self):
-        if data:
+        if self.data:
             return {k: v for k, v in self.data.items()}
         else:
             return {}
@@ -66,6 +67,20 @@ def load_from_json(path, verbose=True):
     if verbose:
         print_hack(f"[HACKCONF] Loading global registry from: {path}")
     GLOBAL_REGISTRY = Registry.load_from_json(path=path, verbose=verbose)
+
+
+def load_from_jsons(path_str, verbose=True):
+    global GLOBAL_REGISTRY
+    path_ls = path_str.split(",")
+    if verbose:
+        print_hack("[HACKCONF] Loading global registry from:")
+        for path in path_ls:
+            print("   ", path_ls)
+    data = datastructures.combine_dicts([
+        io.read_json(path)
+        for path in path_ls
+    ])
+    GLOBAL_REGISTRY = Registry(data=data, verbose=verbose)
 
 
 def to_dict():
