@@ -30,7 +30,7 @@ class ZLogger(BaseZLogger):
         self.overwrite = overwrite
 
         self.write_mode = "w" if overwrite else "a"
-        os.makedirs(fol_path)
+        os.makedirs(fol_path, exist_ok=self.overwrite)
         self.handles = {}
 
     @contextmanager

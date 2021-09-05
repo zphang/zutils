@@ -89,3 +89,8 @@ def get_num_lines(path):
         for i, l in enumerate(f):
             pass
     return i + 1
+
+
+def make_fol_for_path(path):
+    os.makedirs(os.path.split(path)[0], exist_ok=True)
+    return path
